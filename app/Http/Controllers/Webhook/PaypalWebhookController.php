@@ -206,18 +206,20 @@ class PaypalWebhookController extends Controller
                     'full_data' => $data,
                 ]);
 
-                //Trouver la licence
-                $licence = Licence::where('paypal_order_id', $order->id)->first();
+                if (strtoupper(Arr::get($data, 'resource.status')) === 'COMPLETED') {
+                    //Trouver la licence
+                    $licence = Licence::where('paypal_order_id', $order->id)->first();
 
-                if ($licence) {
-                    $licence->paid_at = Carbon::now();
-                    $licence->save();
+                    if ($licence) {
+                        $licence->paid_at = Carbon::now();
+                        $licence->save();
 
-                    $client = Client::find($licence->client_id);
+                        $client = Client::find($licence->client_id);
 
-                    //Envoyer un courriel avec email + ID
-                    if ($client) {
-                        Mail::to($client)->bcc('dev@kyber.studio')->send(new ClientKey($client));
+                        //Envoyer un courriel avec email + ID
+                        if ($client) {
+                            Mail::to($client)->bcc('dev@kyber.studio')->send(new ClientKey($client));
+                        }
                     }
                 }
             }
